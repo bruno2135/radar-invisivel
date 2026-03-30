@@ -1,0 +1,17 @@
+{
+  "name": "radar-invisivel",
+  "version": "1.0.0",
+  "description": "Radar de Oportunidades Invisíveis - Backend",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "stripe": "^14.14.0"
+  },
+  "devDependencies": {
+    "vercel": "^33.0.0"
+  },
+  "engines": { "node": "18.x" }
+}

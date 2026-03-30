@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guia de Deploy — Radar Invisível</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0d1117; --surface:#161b22; --border:#30363d; --accent:#00e5a0; --accent2:#00b8ff; --text:#e6edf3; --muted:#8b949e; --warn:#f59e0b; --danger:#ff4d6d; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); line-height:1.7; }
+  .container { max-width:820px; margin:0 auto; padding:2rem; }
+  header { border-bottom:1px solid var(--border); padding:1.5rem 0; margin-bottom:3rem; display:flex; align-items:center; gap:1rem; }
+  .logo { width:36px; height:36px; background:linear-gradient(135deg,var(--accent),var(--accent2)); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; }
+  h1 { font-family:'Syne',sans-serif; font-size:1.3rem; font-weight:800; }
+  .subtitle { color:var(--muted); font-size:.85rem; margin-top:.1rem; }
+
+  /* PROGRESS */
+  .progress-bar { display:flex; gap:0; margin-bottom:3rem; background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .progress-step { flex:1; padding:.6rem .5rem; text-align:center; font-size:.72rem; color:var(--muted); border-right:1px solid var(--border); cursor:pointer; transition:all .2s; }
+  .progress-step:last-child { border-right:none; }
+  .progress-step.done { background:rgba(0,229,160,.08); color:var(--accent); }
+  .progress-step.active { background:rgba(0,229,160,.15); color:var(--accent); font-weight:600; }
+  .progress-step-n { font-family:'Syne',sans-serif; font-size:.9rem; font-weight:700; display:block; }
+
+  /* STEPS */
+  .step { border:1px solid var(--border); border-radius:16px; overflow:hidden; margin-bottom:1.5rem; }
+  .step-header { padding:1.25rem 1.5rem; background:var(--surface); display:flex; align-items:center; gap:1rem; cursor:pointer; user-select:none; }
+  .step-num { width:32px; height:32px; border-radius:50%; background:var(--accent); color:var(--bg); font-family:'Syne',sans-serif; font-weight:800; font-size:.9rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .step-num.done { background:rgba(0,229,160,.2); color:var(--accent); }
+  .step-title { font-family:'Syne',sans-serif; font-weight:700; font-size:1rem; }
+  .step-meta { font-size:.78rem; color:var(--muted); margin-top:.15rem; }
+  .step-arrow { margin-left:auto; color:var(--muted); transition:transform .2s; font-size:.9rem; }
+  .step-arrow.open { transform:rotate(180deg); }
+  .step-body { padding:1.5rem; display:none; border-top:1px solid var(--border); }
+  .step-body.open { display:block; }
+  .step-done-badge { margin-left:auto; background:rgba(0,229,160,.1); color:var(--accent); border:1px solid rgba(0,229,160,.2); padding:.2rem .6rem; border-radius:99px; font-size:.72rem; font-weight:600; }
+
+  /* CONTENT */
+  h3 { font-family:'Syne',sans-serif; font-size:.95rem; font-weight:700; margin:1.25rem 0 .5rem; color:var(--accent2); }
+  h3:first-child { margin-top:0; }
+  p { font-size:.88rem; color:var(--muted); margin-bottom:.75rem; }
+  code { font-family:'DM Mono',monospace; font-size:.82rem; background:rgba(255,255,255,.05); padding:.15rem .4rem; border-radius:4px; color:var(--accent); }
+  pre { background:#010409; border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; overflow-x:auto; margin:1rem 0; position:relative; }
+  pre code { background:none; padding:0; color:#e6edf3; font-size:.82rem; }
+  .copy-btn { position:absolute; top:.6rem; right:.6rem; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:.25rem .6rem; font-size:.72rem; cursor:pointer; color:var(--muted); font-family:'DM Sans',sans-serif; transition:all .2s; }
+  .copy-btn:hover { color:var(--text); }
+  .copy-btn.ok { color:var(--accent); }
+  .alert { border-radius:10px; padding:.75rem 1rem; font-size:.85rem; margin:1rem 0; display:flex; gap:.6rem; align-items:flex-start; }
+  .alert-warn { background:rgba(245,158,11,.08); border:1px solid rgba(245,158,11,.2); color:var(--warn); }
+  .alert-info { background:rgba(0,184,255,.08); border:1px solid rgba(0,184,255,.2); color:var(--accent2); }
+  .alert-success { background:rgba(0,229,160,.08); border:1px solid rgba(0,229,160,.2); color:var(--accent); }
+  .alert-danger { background:rgba(255,77,109,.08); border:1px solid rgba(255,77,109,.2); color:var(--danger); }
+  ol, ul { padding-left:1.4rem; font-size:.88rem; color:var(--muted); }
+  ol li, ul li { margin-bottom:.4rem; }
+  .img-placeholder { background:var(--surface); border:1px dashed var(--border); border-radius:10px; padding:2rem; text-align:center; color:var(--muted); font-size:.82rem; margin:1rem 0; }
+  .field-row { display:flex; gap:.75rem; align-items:center; background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:8px; padding:.65rem 1rem; margin:.35rem 0; font-size:.85rem; }
+  .field-key { font-family:'DM Mono',monospace; font-size:.78rem; color:var(--accent); min-width:220px; }
+  .field-val { color:var(--muted); font-size:.8rem; }
+  .check-item { display:flex; gap:.75rem; align-items:center; padding:.5rem 0; border-bottom:1px solid var(--border); font-size:.85rem; }
+  .check-item:last-child { border-bottom:none; }
+  .check-box { width:18px; height:18px; border:2px solid var(--border); border-radius:4px; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .2s; }
+  .check-box.checked { background:var(--accent); border-color:var(--accent); color:var(--bg); font-size:.75rem; }
+  .link { color:var(--accent); text-decoration:none; }
+  .link:hover { text-decoration:underline; }
+  .tag { display:inline-block; background:rgba(0,184,255,.1); color:var(--accent2); border:1px solid rgba(0,184,255,.15); border-radius:99px; padding:.15rem .6rem; font-size:.72rem; margin:.15rem; }
+  .final-card { background:linear-gradient(135deg,rgba(0,229,160,.08),rgba(0,184,255,.05)); border:1px solid rgba(0,229,160,.2); border-radius:16px; padding:2rem; text-align:center; margin-top:2rem; }
+  .final-card h2 { font-family:'Syne',sans-serif; font-size:1.4rem; font-weight:800; margin-bottom:.75rem; }
+  .final-card p { color:var(--muted); margin-bottom:1.5rem; }
+  .btn-big { background:var(--accent); color:var(--bg); border:none; padding:.75rem 2rem; border-radius:10px; font-family:'Syne',sans-serif; font-weight:700; font-size:.95rem; cursor:pointer; text-decoration:none; display:inline-block; transition:all .2s; }
+  .btn-big:hover { filter:brightness(1.1); }
+  .cost-table { width:100%; border-collapse:collapse; font-size:.85rem; margin:1rem 0; }
+  .cost-table th { background:var(--surface); padding:.65rem 1rem; text-align:left; color:var(--muted); font-size:.75rem; text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid var(--border); }
+  .cost-table td { padding:.65rem 1rem; border-bottom:1px solid var(--border); }
+  .cost-table tr:last-child td { border-bottom:none; font-weight:600; color:var(--accent); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <div class="logo">📡</div>
+  <div>
+    <h1>Guia de Deploy — Radar de Oportunidades Invisíveis</h1>
+    <div class="subtitle">Do zero ao ar em menos de 2 horas · Para iniciantes</div>
+  </div>
+</header>
+
+<div class="progress-bar">
+  <div class="progress-step active" onclick="jump(0)"><span class="progress-step-n">1</span>GitHub</div>
+  <div class="progress-step" onclick="jump(1)"><span class="progress-step-n">2</span>Supabase</div>
+  <div class="progress-step" onclick="jump(2)"><span class="progress-step-n">3</span>Stripe</div>
+  <div class="progress-step" onclick="jump(3)"><span class="progress-step-n">4</span>Anthropic</div>
+  <div class="progress-step" onclick="jump(4)"><span class="progress-step-n">5</span>Vercel</div>
+  <div class="progress-step" onclick="jump(5)"><span class="progress-step-n">6</span>Testar</div>
+</div>
+
+<div class="alert alert-info">💡 Este guia assume que você baixou os arquivos do projeto. Se ainda não baixou, volte e faça o download do ZIP com todos os arquivos.</div>
+
+<!-- STEP 1: GITHUB -->
+<div class="step" id="step0">
+  <div class="step-header" onclick="toggleStep(0)">
+    <div class="step-num" id="sn0">1</div>
+    <div><div class="step-title">Criar repositório no GitHub</div><div class="step-meta">Onde o código vai ficar hospedado · ~10 minutos</div></div>
+    <div class="step-arrow" id="sa0">▼</div>
+  </div>
+  <div class="step-body open" id="sb0">
+    <div class="alert alert-warn">⚠️ Se você não tem GitHub, crie uma conta grátis em <a href="https://github.com" class="link" target="_blank">github.com</a> primeiro.</div>
+
+    <h3>1. Instale o Git no seu computador</h3>
+    <p>Acesse <a href="https://git-scm.com/downloads" class="link" target="_blank">git-scm.com/downloads</a> e baixe para Windows/Mac. Instale normalmente (next, next, finish).</p>
+
+    <h3>2. Crie o repositório no GitHub</h3>
+    <ol>
+      <li>Acesse <a href="https://github.com/new" class="link" target="_blank">github.com/new</a></li>
+      <li>Nome: <code>radar-invisivel</code></li>
+      <li>Marque <strong>Private</strong> (código não ficará público)</li>
+      <li>Clique em <strong>Create repository</strong></li>
+    </ol>
+
+    <h3>3. Suba os arquivos do projeto</h3>
+    <p>Abra o terminal (no Windows: clique com botão direito na pasta do projeto → "Git Bash Here" ou use o PowerShell) e rode:</p>
+    <pre><code>cd radar-invisivel
+git init
+git add .
+git commit -m "primeiro deploy"
+git branch -M main
+git remote add origin https://github.com/SEU_USUARIO/radar-invisivel.git
+git push -u origin main</code><button class="copy-btn" onclick="copyPre(this)">Copiar</button></pre>
+    <div class="alert alert-info">💡 Substitua <code>SEU_USUARIO</code> pelo seu usuário do GitHub.</div>
+
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>Repositório criado no GitHub com os arquivos</div>
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>Arquivos aparecem no GitHub (vejo a pasta api/, public/, etc.)</div>
+    <button style="background:var(--accent);color:var(--bg);border:none;padding:.5rem 1.25rem;border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.85rem;cursor:pointer;margin-top:1rem" onclick="markDone(0)">✓ Concluído — Ir para o passo 2</button>
+  </div>
+</div>
+
+<!-- STEP 2: SUPABASE -->
+<div class="step" id="step1">
+  <div class="step-header" onclick="toggleStep(1)">
+    <div class="step-num" id="sn1">2</div>
+    <div><div class="step-title">Configurar o Supabase (banco de dados)</div><div class="step-meta">Armazena usuários e oportunidades · ~15 minutos · Grátis</div></div>
+    <div class="step-arrow" id="sa1">▼</div>
+  </div>
+  <div class="step-body" id="sb1">
+    <h3>1. Crie sua conta</h3>
+    <p>Acesse <a href="https://supabase.com" class="link" target="_blank">supabase.com</a> → <strong>Start for free</strong> → Entre com o GitHub.</p>
+
+    <h3>2. Crie um novo projeto</h3>
+    <ol>
+      <li>Clique em <strong>New Project</strong></li>
+      <li>Nome: <code>radar-invisivel</code></li>
+      <li>Crie uma senha forte e <strong>salve em algum lugar</strong></li>
+      <li>Região: <strong>South America (São Paulo)</strong></li>
+      <li>Clique em <strong>Create new project</strong> (aguarde ~2 minutos)</li>
+    </ol>
+
+    <h3>3. Crie as tabelas do banco</h3>
+    <ol>
+      <li>No menu esquerdo, clique em <strong>SQL Editor</strong></li>
+      <li>Clique em <strong>New query</strong></li>
+      <li>Abra o arquivo <code>database.sql</code> que veio no projeto</li>
+      <li>Copie todo o conteúdo e cole no editor</li>
+      <li>Clique em <strong>Run</strong> (botão verde)</li>
+    </ol>
+    <div class="alert alert-success">✅ Você deve ver "Success. No rows returned" — está correto!</div>
+
+    <h3>4. Copie suas chaves de API</h3>
+    <p>Vá em <strong>Settings → API</strong> (menu esquerdo) e copie:</p>
+    <div class="field-row"><span class="field-key">URL</span><span class="field-val">https://XXXX.supabase.co — copie completo</span></div>
+    <div class="field-row"><span class="field-key">anon / public</span><span class="field-val">Chave longa começando com eyJ... — é a ANON KEY</span></div>
+    <div class="field-row"><span class="field-key">service_role</span><span class="field-val">Outra chave eyJ... — é a SERVICE KEY (secreta!)</span></div>
+    <div class="alert alert-danger">🔒 NUNCA coloque a SERVICE KEY no frontend. Ela só vai nas variáveis do Vercel.</div>
+
+    <h3>5. Ative o Login com Google (opcional)</h3>
+    <ol>
+      <li>Vá em <strong>Authentication → Providers</strong></li>
+      <li>Clique em <strong>Google</strong></li>
+      <li>Ative o toggle</li>
+      <li>Você precisará configurar o Google OAuth Console (deixe para depois se quiser)</li>
+    </ol>
+
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>Projeto Supabase criado</div>
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>SQL executado com sucesso (tabelas criadas)</div>
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>Copiei as 3 chaves (URL, anon key, service key)</div>
+    <button style="background:var(--accent);color:var(--bg);border:none;padding:.5rem 1.25rem;border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.85rem;cursor:pointer;margin-top:1rem" onclick="markDone(1)">✓ Concluído — Ir para o passo 3</button>
+  </div>
+</div>
+
+<!-- STEP 3: STRIPE -->
+<div class="step" id="step2">
+  <div class="step-header" onclick="toggleStep(2)">
+    <div class="step-num" id="sn2">3</div>
+    <div><div class="step-title">Configurar o Stripe (pagamentos)</div><div class="step-meta">Cobrança automática de R$9,99/mês · ~20 minutos</div></div>
+    <div class="step-arrow" id="sa2">▼</div>
+  </div>
+  <div class="step-body" id="sb2">
+    <div class="alert alert-warn">⚠️ O Stripe não tem suporte direto a BRL nas contas novas. Use USD (U$ 1,99/mês ≈ R$9,99) ou considere o Mercado Pago para BRL nativo.</div>
+
+    <h3>1. Crie sua conta no Stripe</h3>
+    <ol>
+      <li>Acesse <a href="https://stripe.com" class="link" target="_blank">stripe.com</a> → <strong>Start now</strong></li>
+      <li>Preencha seus dados (nome completo, CNPJ ou CPF, dados bancários)</li>
+      <li>Complete a verificação de identidade</li>
+    </ol>
+
+    <h3>2. Crie o produto (plano Premium)</h3>
+    <ol>
+      <li>No dashboard, vá em <strong>Products → Add product</strong></li>
+      <li>Nome: <strong>Radar Invisível Premium</strong></li>
+      <li>Descrição: Acesso ilimitado a oportunidades invisíveis</li>
+      <li>Em <strong>Pricing</strong>: escolha <strong>Recurring</strong></li>
+      <li>Preço: <code>9.99</code> · Moeda: <strong>BRL</strong></li>
+      <li>Período: <strong>Monthly</strong></li>
+      <li>Clique em <strong>Save product</strong></li>
+    </ol>
+    <div class="alert alert-info">💡 Após salvar, você verá o <strong>Price ID</strong> no formato <code>price_1ABC...</code> — copie ele!</div>
+
+    <h3>3. Copie as chaves de API do Stripe</h3>
+    <p>Vá em <strong>Developers → API Keys</strong>:</p>
+    <div class="field-row"><span class="field-key">Publishable key</span><span class="field-val">pk_live_... (pública, não usamos no backend)</span></div>
+    <div class="field-row"><span class="field-key">Secret key</span><span class="field-val">sk_live_... — ESTA é a que vamos usar</span></div>
+
+    <h3>4. Configure o Webhook</h3>
+    <p>O webhook é o que avisa seu sistema quando alguém paga. Faça isso DEPOIS do deploy no Vercel (passo 5), mas anote onde fazer:</p>
+    <ol>
+      <li>Vá em <strong>Developers → Webhooks → Add endpoint</strong></li>
+      <li>URL: <code>https://SEU-PROJETO.vercel.app/api/webhook</code></li>
+      <li>Eventos a escutar: selecione <strong>"Select all events"</strong> ou escolha manualmente:
+        <span class="tag">checkout.session.completed</span>
+        <span class="tag">invoice.payment_succeeded</span>
+        <span class="tag">invoice.payment_failed</span>
+        <span class="tag">customer.subscription.deleted</span>
+        <span class="tag">customer.subscription.updated</span>
+      </li>
+      <li>Clique em <strong>Add endpoint</strong></li>
+      <li>Copie o <strong>Signing secret</strong> (whsec_...)</li>
+    </ol>
+
+    <h3>5. Teste em modo sandbox primeiro</h3>
+    <p>O Stripe tem um modo de teste. Use as chaves de teste (<code>sk_test_...</code>) durante o desenvolvimento e só mude para as chaves live quando tudo estiver funcionando.</p>
+    <p>Cartão de teste: <code>4242 4242 4242 4242</code> · Validade qualquer · CVV 123</p>
+
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>Conta Stripe criada e verificada</div>
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>Produto Premium criado com preço recorrente</div>
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>Copiei: Secret Key e Price ID</div>
+    <button style="background:var(--accent);color:var(--bg);border:none;padding:.5rem 1.25rem;border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.85rem;cursor:pointer;margin-top:1rem" onclick="markDone(2)">✓ Concluído — Ir para o passo 4</button>
+  </div>
+</div>
+
+<!-- STEP 4: ANTHROPIC -->
+<div class="step" id="step3">
+  <div class="step-header" onclick="toggleStep(3)">
+    <div class="step-num" id="sn3">4</div>
+    <div><div class="step-title">Obter chave da API Anthropic (IA)</div><div class="step-meta">Ativa o assistente de carreira e geração de oportunidades · ~5 minutos</div></div>
+    <div class="step-arrow" id="sa3">▼</div>
+  </div>
+  <div class="step-body" id="sb3">
+    <h3>1. Crie sua conta</h3>
+    <ol>
+      <li>Acesse <a href="https://console.anthropic.com" class="link" target="_blank">console.anthropic.com</a></li>
+      <li>Crie uma conta com seu email</li>
+      <li>Adicione um método de pagamento (é cobrado por uso)</li>
+    </ol>
+
+    <h3>2. Crie sua chave de API</h3>
+    <ol>
+      <li>Vá em <strong>API Keys</strong> no menu</li>
+      <li>Clique em <strong>Create Key</strong></li>
+      <li>Nome: <code>radar-invisivel</code></li>
+      <li>Copie a chave gerada: <code>sk-ant-api03-XXXXX</code></li>
+    </ol>
+    <div class="alert alert-danger">🔒 A chave só aparece UMA VEZ. Salve imediatamente em local seguro!</div>
+
+    <h3>Custo estimado da IA</h3>
+    <table class="cost-table">
+      <thead><tr><th>Cenário</th><th>Chamadas/dia</th><th>Custo estimado/mês</th></tr></thead>
+      <tbody>
+        <tr><td>100 usuários ativos</td><td>~300 chamadas</td><td>~U$3-8/mês</td></tr>
+        <tr><td>1.000 usuários ativos</td><td>~3.000 chamadas</td><td>~U$30-80/mês</td></tr>
+        <tr><td>10.000 usuários</td><td>~30.000 chamadas</td><td>~U$300-800/mês</td></tr>
+        <tr><td colspan="2"><strong>Total</strong></td><td><strong>Coberto pela receita Premium</strong></td></tr>
+      </tbody>
+    </table>
+
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>Conta Anthropic criada com cartão cadastrado</div>
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>Chave de API copiada e salva com segurança</div>
+    <button style="background:var(--accent);color:var(--bg);border:none;padding:.5rem 1.25rem;border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.85rem;cursor:pointer;margin-top:1rem" onclick="markDone(3)">✓ Concluído — Ir para o passo 5</button>
+  </div>
+</div>
+
+<!-- STEP 5: VERCEL -->
+<div class="step" id="step4">
+  <div class="step-header" onclick="toggleStep(4)">
+    <div class="step-num" id="sn4">5</div>
+    <div><div class="step-title">Deploy no Vercel</div><div class="step-meta">Coloca o site no ar + configura variáveis · ~20 minutos · Grátis</div></div>
+    <div class="step-arrow" id="sa4">▼</div>
+  </div>
+  <div class="step-body" id="sb4">
+    <h3>1. Crie sua conta no Vercel</h3>
+    <ol>
+      <li>Acesse <a href="https://vercel.com" class="link" target="_blank">vercel.com</a></li>
+      <li>Clique em <strong>Sign up</strong> → <strong>Continue with GitHub</strong></li>
+      <li>Autorize o Vercel a acessar seus repositórios</li>
+    </ol>
+
+    <h3>2. Importe o projeto</h3>
+    <ol>
+      <li>No dashboard do Vercel, clique em <strong>Add New → Project</strong></li>
+      <li>Encontre o repositório <code>radar-invisivel</code> e clique em <strong>Import</strong></li>
+      <li>Em <strong>Root Directory</strong>: deixe em branco (raiz do projeto)</li>
+      <li>Em <strong>Build & Output Settings</strong>: deixe tudo padrão</li>
+      <li>NÃO clique em Deploy ainda — primeiro configure as variáveis abaixo</li>
+    </ol>
+
+    <h3>3. Configure as variáveis de ambiente</h3>
+    <p>Esta é a parte mais importante. Clique em <strong>Environment Variables</strong> e adicione cada uma:</p>
+
+    <div class="field-row"><span class="field-key">ANTHROPIC_API_KEY</span><span class="field-val">sk-ant-api03-... (da etapa 4)</span></div>
+    <div class="field-row"><span class="field-key">SUPABASE_URL</span><span class="field-val">https://XXXX.supabase.co (da etapa 2)</span></div>
+    <div class="field-row"><span class="field-key">SUPABASE_ANON_KEY</span><span class="field-val">eyJ... anon key (da etapa 2)</span></div>
+    <div class="field-row"><span class="field-key">SUPABASE_SERVICE_KEY</span><span class="field-val">eyJ... service key (da etapa 2)</span></div>
+    <div class="field-row"><span class="field-key">STRIPE_SECRET_KEY</span><span class="field-val">sk_live_... ou sk_test_... (da etapa 3)</span></div>
+    <div class="field-row"><span class="field-key">STRIPE_PRICE_ID</span><span class="field-val">price_1ABC... (da etapa 3)</span></div>
+    <div class="field-row"><span class="field-key">STRIPE_WEBHOOK_SECRET</span><span class="field-val">whsec_... (configurar depois)</span></div>
+    <div class="field-row"><span class="field-key">NEXT_PUBLIC_URL</span><span class="field-val">https://radar-invisivel.vercel.app (URL do seu site)</span></div>
+
+    <div class="alert alert-warn">⚠️ O STRIPE_WEBHOOK_SECRET você vai pegar depois do deploy. Coloque um valor temporário como <code>placeholder</code> e atualize depois.</div>
+
+    <h3>4. Faça o Deploy</h3>
+    <ol>
+      <li>Clique em <strong>Deploy</strong></li>
+      <li>Aguarde ~2 minutos</li>
+      <li>Você verá uma URL como: <code>https://radar-invisivel-abc123.vercel.app</code></li>
+    </ol>
+    <div class="alert alert-success">🎉 Seu site está no ar! Agora vamos atualizar o frontend com as chaves públicas.</div>
+
+    <h3>5. Atualize o arquivo index.html com suas chaves</h3>
+    <p>Abra o arquivo <code>public/index.html</code> e encontre esta seção no início do JavaScript:</p>
+    <pre><code>const CONFIG = {
+  SUPABASE_URL:      'https://SEU-PROJETO.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.COLE-SUA-CHAVE-AQUI',
+  API_URL: window.location.hostname === 'localhost'
+    ? 'http://localhost:3000'
+    : 'https://SEU-PROJETO.vercel.app',
+};</code><button class="copy-btn" onclick="copyPre(this)">Copiar</button></pre>
+    <p>Substitua os valores pelos seus reais, salve o arquivo e envie para o GitHub:</p>
+    <pre><code>git add public/index.html
+git commit -m "configura chaves"
+git push</code><button class="copy-btn" onclick="copyPre(this)">Copiar</button></pre>
+    <p>O Vercel vai fazer o redeploy automaticamente em ~1 minuto.</p>
+
+    <h3>6. Configure o Webhook do Stripe agora</h3>
+    <ol>
+      <li>Copie a URL do seu site: <code>https://radar-invisivel.vercel.app</code></li>
+      <li>Volte ao Stripe → <strong>Developers → Webhooks → Add endpoint</strong></li>
+      <li>URL: <code>https://radar-invisivel.vercel.app/api/webhook</code></li>
+      <li>Selecione os eventos (veja passo 3)</li>
+      <li>Copie o <strong>Signing secret</strong> (whsec_...)</li>
+      <li>No Vercel → <strong>Settings → Environment Variables</strong>: atualize o <code>STRIPE_WEBHOOK_SECRET</code></li>
+      <li>Vá em <strong>Deployments</strong> → clique nos 3 pontos → <strong>Redeploy</strong></li>
+    </ol>
+
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>Conta Vercel criada com GitHub</div>
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>Todas as 8 variáveis de ambiente configuradas</div>
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>Deploy realizado com sucesso (site abre)</div>
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>index.html atualizado com URL e chaves públicas</div>
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>Webhook do Stripe configurado</div>
+    <button style="background:var(--accent);color:var(--bg);border:none;padding:.5rem 1.25rem;border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.85rem;cursor:pointer;margin-top:1rem" onclick="markDone(4)">✓ Concluído — Ir para o passo 6</button>
+  </div>
+</div>
+
+<!-- STEP 6: TESTE -->
+<div class="step" id="step5">
+  <div class="step-header" onclick="toggleStep(5)">
+    <div class="step-num" id="sn5">6</div>
+    <div><div class="step-title">Testar tudo funcionando</div><div class="step-meta">Checklist final antes de lançar · ~15 minutos</div></div>
+    <div class="step-arrow" id="sa5">▼</div>
+  </div>
+  <div class="step-body" id="sb5">
+    <h3>Teste 1 — Cadastro e Login</h3>
+    <ol>
+      <li>Abra seu site: <code>https://SEU-SITE.vercel.app</code></li>
+      <li>Clique em "Começar gratuitamente"</li>
+      <li>Preencha os dados e crie uma conta</li>
+      <li>Verifique se o dashboard abre corretamente</li>
+      <li>No Supabase → <strong>Authentication → Users</strong>: o usuário deve aparecer</li>
+    </ol>
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>Cadastro funciona (usuário aparece no Supabase)</div>
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>Login funciona (entra no dashboard)</div>
+
+    <h3>Teste 2 — IA funcionando</h3>
+    <ol>
+      <li>No dashboard, use o Assistente de Carreira</li>
+      <li>Digite: "Quais empresas de tech estão crescendo no Brasil?"</li>
+      <li>Deve receber uma resposta em segundos</li>
+    </ol>
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>Assistente de IA responde corretamente</div>
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>Botão "Gerar com IA" adiciona novas oportunidades</div>
+
+    <h3>Teste 3 — Pagamento (use modo teste)</h3>
+    <ol>
+      <li>Clique em "Plano" na sidebar</li>
+      <li>Clique em "Assinar agora"</li>
+      <li>Deve redirecionar para o checkout do Stripe</li>
+      <li>Use o cartão de teste: <code>4242 4242 4242 4242</code></li>
+      <li>Validade: qualquer data futura · CVV: 123</li>
+      <li>Após pagar, deve voltar ao dashboard com Premium ativo</li>
+    </ol>
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>Checkout do Stripe abre corretamente</div>
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>Pagamento de teste processado</div>
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>Usuário ficou Premium (verificar no Supabase: is_premium = true)</div>
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>Webhook funcionou (Stripe → Developers → Webhooks → ver eventos)</div>
+
+    <h3>Teste 4 — Cancelamento automático</h3>
+    <p>No Stripe → Customers → encontre o cliente de teste → <strong>Cancel subscription</strong>. Após isso, o campo <code>is_premium</code> no Supabase deve ir para <code>false</code> automaticamente.</p>
+    <div class="check-item"><div class="check-box" onclick="checkItem(this)"></div>Cancelamento remove Premium automaticamente</div>
+
+    <div class="alert alert-success">🎉 Se todos os testes passaram, seu sistema está 100% funcional com cobrança automática!</div>
+
+    <h3>Colocar em produção (live)</h3>
+    <ol>
+      <li>No Stripe, vá em <strong>Developers → API Keys</strong> e ative as <strong>Live keys</strong></li>
+      <li>Atualize as variáveis no Vercel: troque <code>sk_test_...</code> por <code>sk_live_...</code></li>
+      <li>Crie um novo webhook apontando para a URL de produção</li>
+      <li>Faça redeploy no Vercel</li>
+    </ol>
+    <div class="alert alert-warn">⚠️ Só ative as live keys quando terminar todos os testes. Em live, pagamentos são reais!</div>
+  </div>
+</div>
+
+<!-- CUSTOS -->
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin:2rem 0">
+  <h2 style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:1rem">💰 Custo total para rodar o sistema</h2>
+  <table class="cost-table">
+    <thead><tr><th>Serviço</th><th>Custo</th><th>Observação</th></tr></thead>
+    <tbody>
+      <tr><td>Vercel</td><td>R$0</td><td>Gratuito até 100GB de bandwidth</td></tr>
+      <tr><td>Supabase</td><td>R$0</td><td>Gratuito até 500MB e 50.000 usuários</td></tr>
+      <tr><td>Stripe</td><td>2.9% + R$0,30 por transação</td><td>Só cobra quando você recebe</td></tr>
+      <tr><td>Anthropic IA</td><td>~R$5-40/mês</td><td>Depende do volume de uso</td></tr>
+      <tr><td>Domínio próprio (opcional)</td><td>~R$40/ano</td><td>Ex: radarinvisivel.com.br</td></tr>
+      <tr><td colspan="2"><strong>Total para começar</strong></td><td><strong>R$0 (apenas Stripe cobra quando você recebe)</strong></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- FINAL -->
+<div class="final-card">
+  <h2>🚀 Parabéns! Seu Radar está no ar.</h2>
+  <p>Sistema completo com cadastro, pagamentos automáticos, IA integrada e gestão de planos. Agora é hora de divulgar e crescer.</p>
+  <p style="margin-bottom:1.5rem"><strong style="color:var(--accent)">Próximos passos:</strong> Configure um domínio próprio (ex: radarinvisivel.com.br), crie conteúdo no TikTok/Instagram mostrando o produto funcionando, e ative a IA para gerar oportunidades diariamente.</p>
+  <a href="https://vercel.com/dashboard" class="btn-big" target="_blank">Acessar meu Vercel</a>
+</div>
+
+</div>
+
+<script>
+function toggleStep(i) {
+  const body = document.getElementById('sb'+i);
+  const arrow = document.getElementById('sa'+i);
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+function markDone(i) {
+  const num = document.getElementById('sn'+i);
+  num.classList.add('done');
+  num.textContent = '✓';
+  // Open next
+  const next = document.getElementById('sb'+(i+1));
+  const narrow = document.getElementById('sa'+(i+1));
+  if (next) { next.classList.add('open'); if(narrow) narrow.classList.add('open'); }
+  // Update progress
+  const steps = document.querySelectorAll('.progress-step');
+  steps[i]?.classList.add('done');
+  steps[i]?.classList.remove('active');
+  if (steps[i+1]) { steps[i+1].classList.add('active'); }
+  // Scroll to next step
+  const nextStep = document.getElementById('step'+(i+1));
+  if (nextStep) nextStep.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function jump(i) {
+  const step = document.getElementById('step'+i);
+  if (step) { step.scrollIntoView({behavior:'smooth',block:'start'}); }
+}
+
+function checkItem(el) {
+  el.classList.toggle('checked');
+  el.textContent = el.classList.contains('checked') ? '✓' : '';
+}
+
+function copyPre(btn) {
+  const code = btn.parentElement.querySelector('code').textContent;
+  navigator.clipboard?.writeText(code);
+  btn.textContent = 'Copiado!'; btn.classList.add('ok');
+  setTimeout(()=>{ btn.textContent='Copiar'; btn.classList.remove('ok'); }, 2000);
+}
+</script>
+</body>
+</html>
