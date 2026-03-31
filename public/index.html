@@ -225,14 +225,12 @@
 <script>
 // ⚙️ COLOQUE AQUI AS SUAS CHAVES PÚBLICAS
 const CONFIG = {
-  // Copie do Supabase → Settings → API → URL e anon key
-  SUPABASE_URL:      'https://SEU-PROJETO.supabase.co',
-  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.COLE-SUA-CHAVE-AQUI',
-  
-  // URL do seu deploy no Vercel (ex: https://radar-invisivel.vercel.app)
-  API_URL: window.location.hostname === 'localhost'
-    ? 'http://localhost:3000'
-    : 'https://SEU-PROJETO.vercel.app',
+  SUPABASE_URL: 'https://doyurugjdhwsoswhtxtw.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_mAen16UrDE2SJVi-ZXamEQ_yFdgNJjA',
+
+  API_URL: window.location.hostname.includes('localhost')
+  ? 'http://localhost:3000'
+  : 'https://radar-invisivel.vercel.app',
 };
 </script>
 
